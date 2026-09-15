@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SIA1 Merch Counter</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">SIA1 MERCH COUNTER<small>Product · Order · Payment services</small></div>
+  <div class="tag" id="statusTag">checking services…</div>
+</div>
+
+<main>
+  <h1 class="section-label">Pick a shirt</h1>
+  <p class="section-sub">Three choices, live from the Product Service. Selecting one starts an order.</p>
+
+  <div class="grid" id="productGrid">
+    <!-- product stubs injected here -->
+  </div>
+</main>
+
+<div class="tally" id="tally">
+  <div class="line">
+    <span class="label" id="tallyName">—</span>
+    <span id="tallyPrice">₱0.00</span>
+  </div>
+  <div class="right">
+    <div class="qty">
+      <button id="qtyMinus">−</button>
+      <span id="qtyValue">1</span>
+      <button id="qtyPlus">+</button>
+    </div>
+    <span class="status-msg" id="statusMsg"></span>
+    <button class="btn" id="checkoutBtn">Checkout →</button>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const grid = document.getElementById("productGrid");
+const tally = document.getElementById("tally");
+const tallyName = document.getElementById("tallyName");
+const tallyPrice = document.getElementById("tallyPrice");
+const qtyValue = document.getElementById("qtyValue");
+const statusMsg = document.getElementById("statusMsg");
+const statusTag = document.getElementById("statusTag");
+const checkoutBtn = document.getElementById("checkoutBtn");
+
+let products = [];
+let selected = null;
+let qty = 1;
+
+function peso(centavos) {
+  return "₱" + (centavos / 100).toFixed(2);
+}
+
+async function loadProducts() {
+  try {
+    const res = await fetch(`${CONFIG.PRODUCT_SERVICE_URL}/products`);
+    const { data } = await res.json();
+    products = data;
+    renderProducts();
+    statusTag.textContent = "services online";
+  } catch (err) {
+    statusTag.textContent = "product-service unreachable";
+    grid.innerHTML = `<p class="status-msg error">Could not reach the Product Service at ${CONFIG.PRODUCT_SERVICE_URL}. Is it running? (npm start in /product-service)</p>`;
+  }
+}
+
+function renderProducts() {
+  grid.innerHTML = products.map(p => `
+    <div class="stub" data-id="${p.id}">
+      <img src="${p.image}" alt="${p.name}" />
+      <div class="body">
+        <p class="name">${p.name}</p>
+        <p class="desc">${p.description}</p>
+        <div class="price-row">
+          <span class="price-tag">${peso(p.price)}</span>
+          <button class="btn ghost select-btn">Select</button>
+        </div>
+      </div>
+    </div>
+  `).join("");
+
+  grid.querySelectorAll(".stub").forEach(el => {
+    el.querySelector(".select-btn").addEventListener("click", () => selectProduct(el.dataset.id));
+  });
+}
+
+function selectProduct(id) {
+  selected = products.find(p => p.id === id);
+  qty = 1;
+  qtyValue.textContent = qty;
+  document.querySelectorAll(".stub").forEach(el => el.classList.toggle("selected", el.dataset.id === id));
+  updateTally();
+  tally.classList.add("show");
+  statusMsg.textContent = "";
+}
+
+function updateTally() {
+  if (!selected) return;
+  tallyName.textContent = selected.name;
+  tallyPrice.textContent = peso(selected.price * qty);
+}
+
+document.getElementById("qtyMinus").addEventListener("click", () => {
+  if (!selected || qty <= 1) return;
+  qty--;
+  qtyValue.textContent = qty;
+  updateTally();
+});
+
+document.getElementById("qtyPlus").addEventListener("click", () => {
+  if (!selected) return;
+  qty++;
+  qtyValue.textContent = qty;
+  updateTally();
+});
+
+checkoutBtn.addEventListener("click", async () => {
+  if (!selected) return;
+  checkoutBtn.disabled = true;
+  statusMsg.textContent = "";
+  statusMsg.classList.remove("error");
+
+  try {
+    // 1. Order Service: create the order
+    statusMsg.textContent = "Creating order…";
+    const orderRes = await fetch(`${CONFIG.ORDER_SERVICE_URL}/orders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId: selected.id, quantity: qty }),
+    });
+    if (!orderRes.ok) throw new Error("Order Service could not create the order");
+    const { data: order } = await orderRes.json();
+
+    // 2. Payment Service: create the PayMongo Checkout Session
+    statusMsg.textContent = "Creating PayMongo checkout session…";
+    const checkoutRes = await fetch(`${CONFIG.PAYMENT_SERVICE_URL}/checkout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: order.id }),
+    });
+    const checkoutData = await checkoutRes.json();
+    if (!checkoutRes.ok) throw new Error(checkoutData.error || "Payment Service could not start checkout");
+
+    // Remember the session so success.html can verify payment status.
+    localStorage.setItem(`session:${order.id}`, checkoutData.data.checkoutSessionId);
+
+    // 3. Redirect the browser to PayMongo's hosted checkout page.
+    statusMsg.textContent = "Redirecting to PayMongo…";
+    window.location.href = checkoutData.data.checkoutUrl;
+  } catch (err) {
+    statusMsg.textContent = err.message;
+    statusMsg.classList.add("error");
+    checkoutBtn.disabled = false;
+  }
+});
+
+loadProducts();
+</script>
+
+</body>
+</html>

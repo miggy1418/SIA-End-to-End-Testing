@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Order confirmed — SIA1 Merch Counter</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">SIA1 MERCH COUNTER<small>Product · Order · Payment services</small></div>
+  <div class="tag">redirect from PayMongo</div>
+</div>
+
+<div class="result-wrap" id="wrap">
+  <div class="result-stamp paid" id="stamp">checking…</div>
+  <h1 class="result-title" id="title">Verifying your payment</h1>
+  <p class="result-detail" id="detail">Hang on — confirming this with PayMongo directly rather than trusting the redirect alone.</p>
+  <div id="receipt"></div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search);
+const orderId = params.get("order");
+const stamp = document.getElementById("stamp");
+const title = document.getElementById("title");
+const detail = document.getElementById("detail");
+const receipt = document.getElementById("receipt");
+
+async function verify() {
+  if (!orderId) {
+    title.textContent = "No order reference found";
+    detail.textContent = "This page expects a ?order=ORD-XXXX in the URL.";
+    stamp.textContent = "error";
+    return;
+  }
+
+  const sessionId = localStorage.getItem(`session:${orderId}`);
+  if (!sessionId) {
+    title.textContent = "Missing checkout session";
+    detail.textContent = "Couldn't find a matching PayMongo session in this browser's storage.";
+    stamp.textContent = "error";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${CONFIG.PAYMENT_SERVICE_URL}/checkout/${sessionId}/verify?order=${orderId}`);
+    const { data } = await res.json();
+
+    if (data.paid) {
+      stamp.textContent = "payment confirmed";
+      stamp.className = "result-stamp paid";
+      title.textContent = "You're all set!";
+      detail.textContent = `Order ${orderId} has been marked paid by the Order Service.`;
+    } else {
+      stamp.textContent = "not yet confirmed";
+      stamp.className = "result-stamp cancelled";
+      title.textContent = "Payment still processing";
+      detail.textContent = "PayMongo hasn't reported this session as paid yet. Try refreshing in a moment.";
+    }
+
+    const orderRes = await fetch(`${CONFIG.ORDER_SERVICE_URL}/orders/${orderId}`);
+    if (orderRes.ok) {
+      const { data: order } = await orderRes.json();
+      receipt.innerHTML = `
+        <div class="receipt-line"><span>Order</span><span>${order.id}</span></div>
+        <div class="receipt-line"><span>Item</span><span>${order.productName} × ${order.quantity}</span></div>
+        <div class="receipt-line"><span>Total</span><span>₱${(order.amount / 100).toFixed(2)}</span></div>
+        <div class="receipt-line"><span>Status</span><span>${order.status}</span></div>
+      `;
+    }
+  } catch (err) {
+    stamp.textContent = "error";
+    stamp.className = "result-stamp cancelled";
+    title.textContent = "Could not verify payment";
+    detail.textContent = err.message;
+  }
+}
+
+verify();
+</script>
+
+</body>
+</html>

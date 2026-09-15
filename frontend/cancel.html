@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Checkout cancelled — SIA1 Merch Counter</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">SIA1 MERCH COUNTER<small>Product · Order · Payment services</small></div>
+  <div class="tag">redirect from PayMongo</div>
+</div>
+
+<div class="result-wrap">
+  <div class="result-stamp cancelled">checkout cancelled</div>
+  <h1 class="result-title" id="title">No worries — nothing was charged</h1>
+  <p class="result-detail" id="detail">The order stays "pending" until you try checking out again.</p>
+  <a class="btn" href="index.html">← Back to the shop</a>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const orderId = params.get("order");
+if (orderId) {
+  document.getElementById("detail").textContent = `Order ${orderId} is still pending in the Order Service. You can try checking out again any time.`;
+}
+</script>
+
+</body>
+</html>

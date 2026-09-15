@@ -1,0 +1,319 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+:root {
+  --paper: #f3efe4;
+  --paper-dim: #e8e2d2;
+  --ink: #16233f;
+  --ink-soft: #4a5573;
+  --chalk: #f5c518;
+  --stitch: #b7ae93;
+  --paid: #2e7d4f;
+  --cancel: #b23a2e;
+  --radius: 2px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  min-height: 100vh;
+}
+
+/* subtle paper texture via repeating dots */
+body {
+  background-image: radial-gradient(var(--paper-dim) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.topbar {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 22px 28px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 4px solid var(--chalk);
+}
+
+.topbar .brand {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+}
+
+.topbar .brand small {
+  display: block;
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--chalk);
+  margin-top: 2px;
+}
+
+.topbar .tag {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+  border: 1px solid var(--paper-dim);
+  padding: 5px 10px;
+  border-radius: var(--radius);
+}
+
+main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 40px 24px 140px;
+}
+
+.section-label {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  margin: 0 0 6px;
+}
+
+.section-sub {
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin: 0 0 32px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- signature element: the ticket-stub product card --- */
+.stub {
+  background: #fffdf7;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stub:hover {
+  transform: translateY(-3px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.stub.selected {
+  box-shadow: 6px 6px 0 var(--chalk);
+  border-color: var(--ink);
+}
+
+.stub img {
+  width: 100%;
+  display: block;
+  border-bottom: 1px dashed var(--stitch);
+}
+
+.stub .body {
+  padding: 16px 18px 18px;
+}
+
+.stub .name {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  margin: 0 0 6px;
+}
+
+.stub .desc {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin: 0 0 16px;
+  min-height: 36px;
+}
+
+.stub .price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.price-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* punch hole on the price tag, ticket-style */
+.price-tag::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+
+button {
+  font-family: "IBM Plex Mono", monospace;
+  cursor: pointer;
+}
+
+.btn {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 8px 14px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: var(--radius);
+}
+
+.btn:hover {
+  background: var(--chalk);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* --- fixed receipt tally bar --- */
+.tally {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--ink);
+  color: var(--paper);
+  border-top: 4px solid var(--chalk);
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transform: translateY(110%);
+  transition: transform 0.25s ease;
+}
+
+.tally.show {
+  transform: translateY(0);
+}
+
+.tally .line {
+  font-size: 13px;
+}
+
+.tally .line .label {
+  color: var(--paper-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 10px;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.tally .qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 24px;
+}
+
+.tally .qty button {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--paper-dim);
+  background: transparent;
+  color: var(--paper);
+}
+
+.tally .right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.status-msg {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.status-msg.error {
+  color: var(--cancel);
+}
+
+/* --- result pages (success / cancel) --- */
+.result-wrap {
+  max-width: 520px;
+  margin: 90px auto;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.result-stamp {
+  display: inline-block;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 8px 18px;
+  border: 2px solid currentColor;
+  border-radius: var(--radius);
+  transform: rotate(-3deg);
+  margin-bottom: 22px;
+}
+
+.result-stamp.paid {
+  color: var(--paid);
+}
+
+.result-stamp.cancelled {
+  color: var(--cancel);
+}
+
+.result-title {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  margin: 0 0 10px;
+}
+
+.result-detail {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.receipt-line {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed var(--stitch);
+  padding: 8px 0;
+  font-size: 13px;
+  text-align: left;
+}
